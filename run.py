@@ -14,7 +14,22 @@ import webbrowser
 
 def open_app_window(url: str) -> None:
     """Ouvre l'interface dans une fenetre type application (Chrome/Edge --app), sinon le navigateur."""
-    time.sleep(1.2)
+    # On attend que le serveur reponde vraiment (le 1er demarrage peut etre lent).
+    import socket
+    from urllib.parse import urlparse
+
+    host, port = urlparse(url).hostname, urlparse(url).port
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                break
+        except OSError:
+            time.sleep(0.5)
+    else:
+        print("  ! Le serveur ne repond pas : regardez les erreurs ci-dessus.")
+        return
+    time.sleep(0.3)
     candidates = [
         os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
         os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
