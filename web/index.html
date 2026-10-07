@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S.</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='none' stroke='%2300e5ff' stroke-width='8'/><circle cx='50' cy='50' r='16' fill='%2300e5ff'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/jarvis.css">
+</head>
+<body data-theme="arc" data-state="idle">
+<canvas id="bg"></canvas>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<!-- Sequence de demarrage -->
+<div id="boot">
+  <div class="boot-ring"><div></div><div></div><div></div></div>
+  <div class="boot-title">J.A.R.V.I.S.</div>
+  <div class="boot-sub">Just A Rather Very Intelligent System</div>
+  <pre id="boot-log"></pre>
+  <button id="boot-start" class="btn-glow" hidden>ACTIVER</button>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 40 40" class="brand-icon"><circle cx="20" cy="20" r="17"/><circle cx="20" cy="20" r="11"/><circle cx="20" cy="20" r="5" class="fill"/></svg>
+    <div><div class="brand-name">J.A.R.V.I.S.</div><div class="brand-sub">Just A Rather Very Intelligent System</div></div>
+  </div>
+  <div class="chips">
+    <span class="chip" id="chip-brain"><i></i><b>CERVEAU</b><em>--</em></span>
+    <span class="chip" id="chip-mic"><i></i><b>MICRO</b><em>OFF</em></span>
+    <span class="chip" id="chip-control"><i></i><b>CONTROLE</b><em>--</em></span>
+    <span class="chip" id="chip-net"><i></i><b>LIAISON</b><em>...</em></span>
+  </div>
+  <div class="clock"><div id="clock-time">--:--:--</div><div id="clock-date">--</div></div>
+  <button class="icon-btn" id="btn-settings" title="Reglages (Ctrl+,)">⚙</button>
+</header>
+
+<main class="layout">
+  <!-- Colonne gauche -->
+  <aside class="col left">
+    <section class="panel" id="p-diag">
+      <h3><span>Diagnostic systeme</span><small id="diag-host"></small></h3>
+      <div class="gauges">
+        <div class="gauge" id="g-cpu"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42"/></svg><div class="g-label"><b>0</b><span>CPU</span></div></div>
+        <div class="gauge" id="g-ram"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42"/></svg><div class="g-label"><b>0</b><span>RAM</span></div></div>
+        <div class="gauge" id="g-disk"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42"/></svg><div class="g-label"><b>0</b><span>DISQUE</span></div></div>
+      </div>
+      <canvas id="spark" height="60"></canvas>
+      <div class="kv">
+        <div><span>Reseau ↓</span><b id="net-down">--</b></div>
+        <div><span>Reseau ↑</span><b id="net-up">--</b></div>
+        <div><span>Batterie</span><b id="battery">--</b></div>
+        <div><span>Temperature</span><b id="temp">--</b></div>
+        <div><span>Uptime</span><b id="uptime">--</b></div>
+        <div><span>Processus</span><b id="procs">--</b></div>
+      </div>
+      <div class="cores" id="cores"></div>
+    </section>
+    <section class="panel grow" id="p-activity">
+      <h3><span>Journal d'operations</span><small id="usage"></small></h3>
+      <ul id="activity" class="feed"></ul>
+    </section>
+  </aside>
+
+  <!-- Centre -->
+  <section class="center">
+    <div class="reactor-wrap">
+      <canvas id="reactor"></canvas>
+      <div class="reactor-state" id="reactor-state">EN VEILLE</div>
+    </div>
+    <div class="caption" id="caption"></div>
+    <div class="interim" id="interim"></div>
+    <div id="cards" class="cards"></div>
+    <div class="transcript" id="transcript"></div>
+  </section>
+
+  <!-- Colonne droite -->
+  <aside class="col right">
+    <section class="panel" id="p-weather">
+      <h3><span>Meteo</span><small id="w-place"></small></h3>
+      <div class="weather-now"><div class="w-icon" id="w-icon">◌</div><div><div class="w-temp" id="w-temp">--°</div><div class="w-desc" id="w-desc">--</div></div></div>
+      <div class="kv small" id="w-extra"></div>
+      <div class="w-days" id="w-days"></div>
+    </section>
+    <section class="panel" id="p-agenda">
+      <h3><span>Agenda tactique</span><small>rappels &amp; taches</small></h3>
+      <ul id="reminders" class="list"></ul>
+      <ul id="todos" class="list"></ul>
+    </section>
+    <section class="panel" id="p-actions">
+      <h3><span>Protocoles rapides</span></h3>
+      <div class="quick" id="quick">
+        <button data-q="Fais-moi un briefing complet : meteo, agenda, actualites principales et etat du PC.">☀ Briefing</button>
+        <button data-q="Regarde mon ecran et dis-moi ce que tu vois.">👁 Analyse ecran</button>
+        <button data-q="Quelles sont les actualites importantes du moment ?">📰 Actualites</button>
+        <button data-q="Fais un diagnostic complet de mon PC et dis-moi s'il y a un probleme.">⚡ Diagnostic</button>
+        <button data-q="Lance la routine travail.">💼 Mode travail</button>
+        <button data-q="Mets de la musique pour se concentrer.">♫ Musique</button>
+        <button data-q="Range mon dossier Telechargements par type de fichier. Montre-moi d'abord ce que tu prevois.">🗂 Ranger</button>
+        <button data-q="Verrouille la session.">🔒 Verrouiller</button>
+      </div>
+    </section>
+    <section class="panel grow" id="p-news">
+      <h3><span>Flux d'informations</span><small id="news-time"></small></h3>
+      <ul id="news" class="news"></ul>
+    </section>
+  </aside>
+</main>
+
+<footer class="console">
+  <div class="dropzone" id="attachments"></div>
+  <form id="composer" autocomplete="off">
+    <button type="button" class="mic" id="btn-mic" title="Parler (Ctrl+Espace)">
+      <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V22h2v-3.08A7 7 0 0 0 19 12z"/></svg>
+    </button>
+    <button type="button" class="icon-btn" id="btn-attach" title="Joindre une image">⧉</button>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <input id="input" placeholder="Parlez-moi ou tapez une commande…   (Ctrl+Espace pour parler, Echap pour interrompre)">
+    <button type="button" class="icon-btn" id="btn-stop" title="Interrompre (Echap)">■</button>
+    <button type="submit" class="send">ENVOYER</button>
+  </form>
+  <div class="console-tools">
+    <label class="toggle"><input type="checkbox" id="t-wake"><span></span>Mot d'activation « <b id="wake-label">Jarvis</b> »</label>
+    <label class="toggle"><input type="checkbox" id="t-voice"><span></span>Voix</label>
+    <label class="toggle"><input type="checkbox" id="t-continuous"><span></span>Conversation continue</label>
+    <button class="link" id="btn-new">Nouvelle session</button>
+  </div>
+</footer>
+
+<!-- Confirmation -->
+<div id="confirm" class="modal" hidden>
+  <div class="modal-box warn">
+    <div class="modal-title">⚠ AUTORISATION REQUISE</div>
+    <div class="modal-text" id="confirm-text"></div>
+    <div class="modal-hint">Dites « oui » / « confirme » ou « non » / « annule »</div>
+    <div class="modal-actions"><button class="btn-deny" id="confirm-no">REFUSER</button><button class="btn-glow" id="confirm-yes">AUTORISER</button></div>
+    <div class="countdown"><i id="confirm-bar"></i></div>
+  </div>
+</div>
+
+<!-- Reglages -->
+<aside id="settings" class="drawer" hidden>
+  <div class="drawer-head"><h2>Configuration</h2><button class="icon-btn" id="settings-close">✕</button></div>
+  <div class="drawer-body">
+    <h4>Cerveau (Claude)</h4>
+    <label>Cle API Anthropic <small id="key-hint"></small><input type="password" id="s-api_key" placeholder="sk-ant-..."></label>
+    <label>Modele<select id="s-model"></select></label>
+    <label>Reflexion (effort)<select id="s-effort"><option value="low">Rapide (low)</option><option value="medium">Equilibre (medium)</option><option value="high">Approfondi (high)</option><option value="xhigh">Expert (xhigh)</option><option value="max">Maximum</option></select></label>
+    <label>Autonomie<select id="s-autonomy"><option value="prudent">Prudent : je valide chaque action</option><option value="normal">Normal : je valide les actions sensibles</option><option value="total">Total : JARVIS agit seul</option></select></label>
+    <label class="toggle"><input type="checkbox" id="s-computer_use"><span></span>Autoriser la prise de controle souris/clavier</label>
+    <label class="toggle"><input type="checkbox" id="s-web_search"><span></span>Recherche web en temps reel</label>
+    <h4>Identite</h4>
+    <label>Comment dois-je vous appeler ?<input id="s-user_name"></label>
+    <label>Nom de l'assistante<input id="s-assistant_name"></label>
+    <label>Ville (meteo, vide = auto)<input id="s-city"></label>
+    <h4>Voix</h4>
+    <label>Moteur<select id="s-tts_engine"><option value="edge">Voix neurale (recommande)</option><option value="browser">Voix du navigateur</option><option value="off">Muet</option></select></label>
+    <label>Voix<select id="s-voice"></select></label>
+    <label>Debit <output id="o-rate"></output><input type="range" id="s-voice_rate" min="-30" max="40"></label>
+    <label>Hauteur <output id="o-pitch"></output><input type="range" id="s-voice_pitch" min="-20" max="20"></label>
+    <label class="toggle"><input type="checkbox" id="s-voice_fx"><span></span>Effet vocal holographique</label>
+    <label>Mot d'activation<input id="s-wake_word"></label>
+    <button class="btn-glow small" id="voice-test">Tester la voix</button>
+    <h4>Interface</h4>
+    <label>Theme<select id="s-theme"><option value="arc">Arc Reactor (cyan)</option><option value="mark3">Mark III (rouge &amp; or)</option><option value="stealth">Stealth (blanc)</option><option value="vibranium">Vibranium (violet)</option></select></label>
+    <label class="toggle"><input type="checkbox" id="s-sound_fx"><span></span>Effets sonores</label>
+    <label class="toggle"><input type="checkbox" id="s-boot_sequence"><span></span>Sequence de demarrage</label>
+    <label class="toggle"><input type="checkbox" id="s-morning_briefing"><span></span>Briefing automatique au demarrage</label>
+    <h4>Memoire de JARVIS</h4>
+    <ul id="memory" class="list small"></ul>
+    <h4>Routines</h4>
+    <ul id="routines" class="list small"></ul>
+    <p class="muted">Raccourcis : Ctrl+Espace parler · Echap interrompre · Ctrl+K saisir · Ctrl+, reglages.<br>
+    Arret d'urgence de la prise de controle : placez la souris dans un coin de l'ecran.</p>
+  </div>
+  <div class="drawer-foot"><button class="btn-glow" id="settings-save">ENREGISTRER</button></div>
+</aside>
+
+<div id="toasts"></div>
+
+<script src="/static/js/reactor.js"></script>
+<script src="/static/js/voice.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
